@@ -4,6 +4,8 @@ import { CountryInfo, getCountryByName } from "../../services/apiService";
 
 export class SearchCountryViewModel extends SearchCountryModel {
   private timeoutId: number | null = null;
+  private currentRequestId: number = 0;
+  isNotFound: boolean = false;
   constructor(maxSuggestions: number) {
     super(maxSuggestions);
     makeObservable(this, {
@@ -33,11 +35,16 @@ export class SearchCountryViewModel extends SearchCountryModel {
   }
 
   private fetchSuggestions = async () => {
+    const requestId = ++this.currentRequestId;
     runInAction(() => {
-      this.isNotFound = false;
       this.isLoading = true;
+      this.isNotFound = false;
     });
     const results = await getCountryByName(this.query);
+
+    if (requestId !== this.currentRequestId) {
+      return;
+    }
 
     runInAction(() => {
       this.suggestions = results.slice(0, this.maxSuggestions);
